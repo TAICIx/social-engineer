@@ -1,4 +1,6 @@
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
   canCapitalize: { type: Boolean, default: false },
   isHesitating: { type: Boolean, default: false },
@@ -6,6 +8,7 @@ const props = defineProps({
   accelLevel: { type: Number, default: 0 },
   maxAccel: { type: Number, default: 5 },
   disabled: { type: Boolean, default: false },
+  emotes: { type: Object, required: true },
 })
 
 const emit = defineEmits(['action'])
@@ -53,30 +56,30 @@ function doAction(action) {
     </button>
   </div>
 
-  <!-- Normal actions -->
+  <!-- Normal actions — themed per scam type -->
   <div v-else class="action-panel">
     <div class="action-grid">
       <button class="action-btn action-btn--strong" @click="doAction('strong')" :disabled="disabled">
-        <span class="action-btn__icon">&#x1F4AA;</span>
+        <span class="action-btn__icon">{{ emotes.strong.emoji }}</span>
         <span class="action-btn__text">
-          <strong>Strong Forward</strong>
-          <small>Big jump, imprecise</small>
+          <strong>{{ emotes.strong.label }}</strong>
+          <small>{{ emotes.strong.desc }}</small>
         </span>
       </button>
 
       <button class="action-btn action-btn--soft" @click="doAction('soft')" :disabled="disabled">
-        <span class="action-btn__icon">&#x1F91D;</span>
+        <span class="action-btn__icon">{{ emotes.soft.emoji }}</span>
         <span class="action-btn__text">
-          <strong>Soft Forward</strong>
-          <small>Small, precise</small>
+          <strong>{{ emotes.soft.label }}</strong>
+          <small>{{ emotes.soft.desc }}</small>
         </span>
       </button>
 
       <button class="action-btn action-btn--back" @click="doAction('back')" :disabled="disabled">
-        <span class="action-btn__icon">&#x1F519;</span>
+        <span class="action-btn__icon">{{ emotes.back.emoji }}</span>
         <span class="action-btn__text">
-          <strong>Retreat</strong>
-          <small>Step backward</small>
+          <strong>{{ emotes.back.label }}</strong>
+          <small>{{ emotes.back.desc }}</small>
         </span>
       </button>
 
@@ -85,9 +88,9 @@ function doAction(action) {
         @click="doAction('accelerate')"
         :disabled="disabled || accelLevel >= maxAccel"
       >
-        <span class="action-btn__icon">&#x26A1;</span>
+        <span class="action-btn__icon">{{ emotes.accel.emoji }}</span>
         <span class="action-btn__text">
-          <strong>Accelerate</strong>
+          <strong>{{ emotes.accel.label }}</strong>
           <small>{{ accelLevel }}/{{ maxAccel }} stacks</small>
         </span>
         <span v-if="accelLevel > 0" class="action-btn__badge">{{ accelLevel }}x</span>
@@ -99,10 +102,10 @@ function doAction(action) {
         :disabled="disabled || !canCapitalize"
         :class="{ 'action-btn--glow': canCapitalize }"
       >
-        <span class="action-btn__icon">&#x1F4B0;</span>
+        <span class="action-btn__icon">{{ emotes.cap.emoji }}</span>
         <span class="action-btn__text">
-          <strong>Capitalize</strong>
-          <small>{{ canCapitalize ? 'Cash out now!' : 'Land on reward cell' }}</small>
+          <strong>{{ emotes.cap.label }}</strong>
+          <small>{{ canCapitalize ? emotes.cap.desc : 'Land on reward cell' }}</small>
         </span>
       </button>
     </div>
@@ -169,7 +172,7 @@ function doAction(action) {
 }
 
 .action-btn__icon {
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1;
 }
 
@@ -181,15 +184,21 @@ function doAction(action) {
 }
 
 .action-btn__text strong {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .action-btn__text small {
   font-size: 9px;
   color: var(--text-muted);
-  white-space: nowrap;
+  text-align: center;
+  line-height: 1.3;
+  max-width: 110px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .action-btn__badge {

@@ -1,4 +1,6 @@
 <script setup>
+import { ref } from 'vue'
+import { RESPONSE_EMOTES } from '@/data/scenarios'
 import { useSocialEngineer } from '@/composables/useSocialEngineer'
 import ProgressBar from '@/components/ProgressBar.vue'
 import ActionButtons from '@/components/ActionButtons.vue'
@@ -36,11 +38,26 @@ const {
   getShareText,
 } = useSocialEngineer()
 
+// Emotes for this scam type
+const emotes = RESPONSE_EMOTES[scamType.id]
+
+// Track what the player last "said" for the dialogue back-and-forth
+const playerLastLine = ref('')
+
 function handleAction(action) {
+  // Show what the player "said" before the mark reacts
+  if (emotes && action !== 'resolve_concern' && action !== 'skip') {
+    const key = action === 'accelerate' ? 'accel' : action === 'capitalize' ? 'cap' : action
+    if (emotes[key]) {
+      playerLastLine.value = emotes[key].desc
+    }
+  }
+
   if (action === 'resolve_concern') {
+    playerLastLine.value = 'Let me explain, this is completely legitimate...'
     resolveConcern()
   } else if (action === 'skip') {
-    // Hesitation skip — just call move with any action, it handles it
+    playerLastLine.value = ''
     move('strong')
   } else {
     move(action)
@@ -83,9 +100,9 @@ function handleAction(action) {
         <CellLegend />
 
         <p class="start-screen__instructions">
-          Navigate a 50-cell progress bar. Use Strong/Soft forward moves to reach
-          reward zones, then Capitalize to win. Avoid fail cells and manage the mark's
-          suspicion. After round 4, suspicion closes in from the left.
+          Navigate the persuasion bar by choosing emotional responses.
+          Each response moves your position — land on a reward zone and capitalize to win.
+          Watch out for the mark's concerns, hesitation, and suspicion that closes in after round 4.
         </p>
 
         <button class="start-screen__btn" @click="startGame">
@@ -107,6 +124,14 @@ function handleAction(action) {
         :tier="tier"
       />
 
+      <!-- Dialogue: Player said → Mark reacts -->
+      <div v-if="playerLastLine" class="player-bubble">
+        <div class="player-bubble__content">
+          <p class="player-bubble__text">"{{ playerLastLine }}"</p>
+          <span class="player-bubble__label">You</span>
+        </div>
+      </div>
+
       <MarkBubble
         :mark="mark"
         :mark-name="markName"
@@ -127,6 +152,7 @@ function handleAction(action) {
         :must-resolve-concern="mustResolveConcern"
         :accel-level="accelLevel"
         :max-accel="MAX_ACCEL"
+        :emotes="emotes"
         @action="handleAction"
       />
 
@@ -336,6 +362,47 @@ function handleAction(action) {
 @keyframes pulse-red {
   0%, 100% { opacity: 0.8; }
   50% { opacity: 1; }
+}
+
+/* ── Player dialogue bubble ── */
+.player-bubble {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.player-bubble__content {
+  background: rgba(110, 143, 112, 0.15);
+  border: 1px solid rgba(110, 143, 112, 0.3);
+  border-radius: 12px;
+  border-bottom-right-radius: 4px;
+  padding: 8px 14px;
+  max-width: 80%;
+  animation: bubble-in 0.3s ease-out;
+}
+
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.player-bubble__text {
+  font-size: 13px;
+  color: var(--accent-green-light);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.player-bubble__label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  text-align: right;
+  margin-top: 2px;
 }
 
 /* ── End Phase ── */

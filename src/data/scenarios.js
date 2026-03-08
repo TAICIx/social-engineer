@@ -272,6 +272,89 @@ export const MOVEMENT_RANGES = {
 // Index = round number. After round 4, red creeps in.
 export const SUSPICION_THRESHOLDS = [0, 0, 0, 0, 2, 5, 8, 11, 16, 23, 34, 50]
 
+// ── Response emotes per scam type ──────────────────────────
+// Each scam type uses different emotional labels for the same 5 mechanics.
+// The emojis change per scam type (like Torn), but map to: strong, soft, back, accelerate, capitalize.
+export const RESPONSE_EMOTES = {
+  delivery: {
+    strong: { emoji: '\u{1F621}', label: 'Threaten', desc: 'Your package will be returned to sender!' },
+    soft:   { emoji: '\u{1F614}', label: 'Apologize', desc: 'We\'re so sorry for the inconvenience...' },
+    back:   { emoji: '\u{1F914}', label: 'Confuse', desc: 'Let me transfer you to another department...' },
+    accel:  { emoji: '\u{1F4E2}', label: 'Urgency', desc: 'This is your FINAL notice!' },
+    cap:    { emoji: '\u{1F4B3}', label: 'Collect', desc: 'Just need your card to confirm redelivery.' },
+  },
+  family_emergency: {
+    strong: { emoji: '\u{1F62D}', label: 'Panic', desc: 'Please, I\'m scared, I need help NOW!' },
+    soft:   { emoji: '\u{1F622}', label: 'Guilt', desc: 'I didn\'t know who else to call...' },
+    back:   { emoji: '\u{1F625}', label: 'Sob Story', desc: 'I know this sounds crazy, but hear me out...' },
+    accel:  { emoji: '\u{1F628}', label: 'Escalate', desc: 'They said they\'ll hurt me if I don\'t pay!' },
+    cap:    { emoji: '\u{1F64F}', label: 'Beg', desc: 'Please send the money, I\'ll pay you back!' },
+  },
+  prize_lottery: {
+    strong: { emoji: '\u{1F929}', label: 'Hype', desc: 'You WON! This is HUGE!' },
+    soft:   { emoji: '\u{1F60A}', label: 'Reassure', desc: 'Thousands of winners claimed already.' },
+    back:   { emoji: '\u{1F9D0}', label: 'Officiate', desc: 'Per regulation 47-B, we must verify...' },
+    accel:  { emoji: '\u{23F0}', label: 'Deadline', desc: 'Offer expires in 24 hours!' },
+    cap:    { emoji: '\u{1F3C6}', label: 'Award', desc: 'Just pay the processing fee to claim!' },
+  },
+  charity: {
+    strong: { emoji: '\u{1F622}', label: 'Guilt Trip', desc: 'Children are suffering while we speak...' },
+    soft:   { emoji: '\u{1F60C}', label: 'Inspire', desc: 'Your donation changes lives.' },
+    back:   { emoji: '\u{1F64F}', label: 'Appeal', desc: 'Even a small amount makes a difference...' },
+    accel:  { emoji: '\u{1F525}', label: 'Matching', desc: 'A donor is matching gifts TODAY only!' },
+    cap:    { emoji: '\u{2764}\u{FE0F}', label: 'Collect', desc: 'Bless you. Let me take your payment info.' },
+  },
+  tech_support: {
+    strong: { emoji: '\u{1F6A8}', label: 'Alarm', desc: 'CRITICAL: Your files are being deleted!' },
+    soft:   { emoji: '\u{1F9D1}\u{200D}\u{1F4BB}', label: 'Guide', desc: 'Don\'t worry, I\'ll walk you through this.' },
+    back:   { emoji: '\u{1F50D}', label: 'Diagnose', desc: 'Let me run another scan to check...' },
+    accel:  { emoji: '\u{26A0}\u{FE0F}', label: 'Warning', desc: 'Hackers are accessing your bank RIGHT NOW!' },
+    cap:    { emoji: '\u{1F6E1}\u{FE0F}', label: 'Fix It', desc: 'I\'ll remove the virus for just $299.' },
+  },
+  vacation: {
+    strong: { emoji: '\u{1F3D6}\u{FE0F}', label: 'Dream Sell', desc: 'Imagine yourself on that beach...' },
+    soft:   { emoji: '\u{1F60E}', label: 'Exclusivity', desc: 'This is an invite-only rate.' },
+    back:   { emoji: '\u{1F4CB}', label: 'Details', desc: 'Let me pull up the package specifics...' },
+    accel:  { emoji: '\u{1F525}', label: 'Scarcity', desc: 'Only 2 spots left at this price!' },
+    cap:    { emoji: '\u{2708}\u{FE0F}', label: 'Book Now', desc: 'Just a small deposit to lock it in.' },
+  },
+  tax_irs: {
+    strong: { emoji: '\u{1F46E}', label: 'Intimidate', desc: 'Officers are en route to your location.' },
+    soft:   { emoji: '\u{1F4DD}', label: 'Officiate', desc: 'According to case file #TC-4892...' },
+    back:   { emoji: '\u{1F3DB}\u{FE0F}', label: 'Authorize', desc: 'I\'m transferring you to my supervisor...' },
+    accel:  { emoji: '\u{26D4}', label: 'Deadline', desc: 'You have 1 hour before the warrant is issued.' },
+    cap:    { emoji: '\u{1F4B8}', label: 'Settle', desc: 'Pay now to avoid criminal charges.' },
+  },
+  advance_fee: {
+    strong: { emoji: '\u{1F911}', label: 'Dangle', desc: 'Your share would be $4.2 million...' },
+    soft:   { emoji: '\u{1F91D}', label: 'Trust Build', desc: 'I chose you because of your reputation.' },
+    back:   { emoji: '\u{1F4C4}', label: 'Paperwork', desc: 'The bank requires one more form...' },
+    accel:  { emoji: '\u{23F3}', label: 'Pressure', desc: 'The transfer window closes tomorrow!' },
+    cap:    { emoji: '\u{1F4B0}', label: 'Fee Request', desc: 'Just $500 to release the funds.' },
+  },
+  job: {
+    strong: { emoji: '\u{1F4AA}', label: 'Opportunity', desc: 'Top earners make $10K their first month!' },
+    soft:   { emoji: '\u{1F60A}', label: 'Welcome', desc: 'You\'re exactly what we\'re looking for.' },
+    back:   { emoji: '\u{1F4CB}', label: 'Process', desc: 'Just a few more steps in your application...' },
+    accel:  { emoji: '\u{1F525}', label: 'Closing', desc: 'This position fills by end of day!' },
+    cap:    { emoji: '\u{1F4BC}', label: 'Onboard', desc: 'Pay the $200 training fee to get started.' },
+  },
+  romance: {
+    strong: { emoji: '\u{1F618}', label: 'Love Bomb', desc: 'I\'ve never felt this way about anyone...' },
+    soft:   { emoji: '\u{1F970}', label: 'Flatter', desc: 'You\'re the most beautiful soul I\'ve met.' },
+    back:   { emoji: '\u{1F62A}', label: 'Vulnerable', desc: 'I\'ve been hurt before, I need to trust...' },
+    accel:  { emoji: '\u{1F496}', label: 'Future Talk', desc: 'When we finally meet, everything changes.' },
+    cap:    { emoji: '\u{1F4B8}', label: 'Emergency', desc: 'I need help with hospital bills, my love.' },
+  },
+  investment: {
+    strong: { emoji: '\u{1F4C8}', label: 'Flex', desc: 'Look at these returns from last month!' },
+    soft:   { emoji: '\u{1F913}', label: 'Educate', desc: 'Let me explain the algorithm to you.' },
+    back:   { emoji: '\u{1F4CA}', label: 'Data Dump', desc: 'Here\'s our audited performance report...' },
+    accel:  { emoji: '\u{1F680}', label: 'FOMO', desc: 'The next funding round closes tonight!' },
+    cap:    { emoji: '\u{1F4B0}', label: 'Invest', desc: 'Wire your stake to begin earning.' },
+  },
+}
+
 // ── Cell type metadata for display ──
 export const CELL_TYPES = {
   neutral:       { label: 'Safe',        color: 'var(--cell-neutral)',       textColor: '#999' },
