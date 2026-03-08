@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* ── Torn-inspired dark theme ────────────────────────────── */
+:root {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #222;
+  --bg-card: #2a2a2a;
+  --bg-elevated: #333;
+  --text-primary: #e0ddd4;
+  --text-secondary: #999;
+  --text-muted: #666;
+  --border: #3a3a3a;
+  --border-light: #444;
+  --accent-green: #6e8f70;
+  --accent-green-light: #9FB6A1;
+  --accent-red: #b91c1c;
+  --accent-red-light: #ef4444;
+  --accent-yellow: #d97706;
+  --accent-purple: #8b5cf6;
+
+  /* Cell colors */
+  --cell-neutral: #3a3a3a;
+  --cell-reward-low: #2d4a2e;
+  --cell-reward-medium: #3d6b3f;
+  --cell-reward-high: #4a8c4d;
+  --cell-concern: #5b21b6;
+  --cell-hesitation: #92400e;
+  --cell-fail: #991b1b;
+  --cell-suspicion: #7f1d1d;
+  --cell-temptation: #1e3a5f;
+  --cell-sensitivity: #4a3728;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
