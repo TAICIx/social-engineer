@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 import { CELL_TYPES } from '@/data/scenarios'
 
+const emit = defineEmits(['restart'])
+
 const props = defineProps({
   won: { type: Boolean, required: true },
   endReason: { type: String, required: true },
@@ -110,10 +112,13 @@ async function copyShare() {
       </div>
     </div>
 
-    <!-- Share -->
-    <div class="end-screen__share">
+    <!-- Share + Restart -->
+    <div class="end-screen__actions">
       <button class="share-btn" @click="copyShare">
         {{ copied ? 'Copied!' : 'Share Results' }}
+      </button>
+      <button class="restart-btn" @click="emit('restart')">
+        Play Again
       </button>
     </div>
   </div>
@@ -256,8 +261,10 @@ async function copyShare() {
   color: var(--text-secondary);
 }
 
-.end-screen__share {
-  text-align: center;
+.end-screen__actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
 }
 
 .share-btn {
@@ -275,6 +282,25 @@ async function copyShare() {
 
 .share-btn:hover {
   background: var(--accent-green-light);
+  transform: translateY(-1px);
+}
+
+.restart-btn {
+  padding: 12px 32px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.restart-btn:hover {
+  border-color: var(--border-light);
+  color: var(--text-primary);
   transform: translateY(-1px);
 }
 </style>

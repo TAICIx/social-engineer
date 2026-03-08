@@ -35,6 +35,7 @@ const {
   startGame,
   move,
   resolveConcern,
+  resetGame,
   getShareText,
 } = useSocialEngineer()
 
@@ -43,6 +44,11 @@ const emotes = RESPONSE_EMOTES[scamType.id]
 
 // Track what the player last "said" for the dialogue back-and-forth
 const playerLastLine = ref('')
+
+function handleRestart() {
+  resetGame()
+  playerLastLine.value = ''
+}
 
 function handleAction(action) {
   // Show what the player "said" before the mark reacts
@@ -177,6 +183,7 @@ function handleAction(action) {
         :bar-cells="barCells"
         :challenge-number="challengeNumber"
         :share-text="getShareText()"
+        @restart="handleRestart"
       />
     </div>
 

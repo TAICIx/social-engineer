@@ -394,6 +394,24 @@ export function useSocialEngineer() {
     saveState()
   }
 
+  function resetGame() {
+    try { localStorage.removeItem(storageKey) } catch { /* */ }
+    barCells.value = generateBar(dailySeed, scamType)
+    gamePhase.value = 'start'
+    position.value = 0
+    round.value = 0
+    accelerationStacks.value = 0
+    isHesitating.value = false
+    mustResolveConcern.value = false
+    suspicionLine.value = 0
+    moveHistory.value = []
+    won.value = false
+    endReason.value = ''
+    markReaction.value = ''
+    lastMoveResult.value = null
+    capitalizeValue.value = ''
+  }
+
   // ── Share results ─────────────────────────────────────
   function getShareText() {
     const result = won.value ? `Capitalized (${capitalizeValue.value})` : `Busted (${endReason.value})`
@@ -462,6 +480,7 @@ export function useSocialEngineer() {
     startGame,
     move,
     resolveConcern,
+    resetGame,
     getShareText,
   }
 }
