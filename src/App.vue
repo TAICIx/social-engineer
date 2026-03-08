@@ -1,18 +1,18 @@
 <script setup>
 import { ref } from 'vue'
-import { RESPONSE_EMOTES } from '@/data/scenarios'
 import { useSocialEngineer } from '@/composables/useSocialEngineer'
 import ProgressBar from '@/components/ProgressBar.vue'
 import ActionButtons from '@/components/ActionButtons.vue'
 import StatusBar from '@/components/StatusBar.vue'
 import CellLegend from '@/components/CellLegend.vue'
-import MarkBubble from '@/components/MarkBubble.vue'
+import ChatLog from '@/components/ChatLog.vue'
 import EndScreen from '@/components/EndScreen.vue'
 
 const {
   scamType,
   mark,
   markName,
+  markEmail,
   challengeNumber,
   TOTAL_CELLS,
   MAX_ACCEL,
@@ -28,10 +28,12 @@ const {
   moveHistory,
   won,
   endReason,
-  markReaction,
   capitalizeValue,
   canCapitalize,
   tier,
+  rangePreview,
+  rewardTierLabel,
+  chatLog,
   startGame,
   move,
   resolveConcern,
@@ -39,35 +41,25 @@ const {
   getShareText,
 } = useSocialEngineer()
 
-// Emotes for this scam type
-const emotes = RESPONSE_EMOTES[scamType.id]
-
-// Track what the player last "said" for the dialogue back-and-forth
-const playerLastLine = ref('')
+const hoveredAction = ref(null)
+const showLegend = ref(false)
 
 function handleRestart() {
   resetGame()
-  playerLastLine.value = ''
 }
 
 function handleAction(action) {
-  // Show what the player "said" before the mark reacts
-  if (emotes && action !== 'resolve_concern' && action !== 'skip') {
-    const key = action === 'accelerate' ? 'accel' : action === 'capitalize' ? 'cap' : action
-    if (emotes[key]) {
-      playerLastLine.value = emotes[key].desc
-    }
-  }
-
   if (action === 'resolve_concern') {
-    playerLastLine.value = 'Let me explain, this is completely legitimate...'
     resolveConcern()
   } else if (action === 'skip') {
-    playerLastLine.value = ''
     move('strong')
   } else {
     move(action)
   }
+}
+
+function handleHover(action) {
+  hoveredAction.value = action
 }
 </script>
 
@@ -79,7 +71,7 @@ function handleAction(action) {
       <p class="app-header__sub font-mono">#{{ challengeNumber }}</p>
     </header>
 
-    <!-- ═══ START SCREEN ═══ -->
+    <!-- START SCREEN -->
     <div v-if="gamePhase === 'start'" class="start-screen">
       <div class="start-screen__card">
         <div class="start-screen__scam-badge">
@@ -95,6 +87,7 @@ function handleAction(action) {
           <span class="start-screen__mark-label">Your Mark</span>
           <span class="start-screen__mark-emoji">{{ mark.emoji }}</span>
           <span class="start-screen__mark-name">{{ markName }}</span>
+          <span class="start-screen__mark-email font-mono">{{ markEmail }}</span>
           <span class="start-screen__mark-demo">{{ mark.label }}</span>
           <span class="start-screen__mark-rate font-mono">
             Concern resist: {{ Math.round(mark.concernSuccessRate * 100) }}%
@@ -103,12 +96,10 @@ function handleAction(action) {
 
         <div class="start-screen__divider"></div>
 
-        <CellLegend />
-
         <p class="start-screen__instructions">
           Navigate the persuasion bar by choosing emotional responses.
           Each response moves your position — land on a reward zone and capitalize to win.
-          Watch out for the mark's concerns, hesitation, and suspicion that closes in after round 4.
+          Watch out for concerns, hesitation, and suspicion that closes in after round 4.
         </p>
 
         <button class="start-screen__btn" @click="startGame">
@@ -117,58 +108,57 @@ function handleAction(action) {
       </div>
     </div>
 
-    <!-- ═══ PLAYING SCREEN ═══ -->
+    <!-- PLAYING SCREEN -->
     <div v-else-if="gamePhase === 'playing'" class="play-screen">
       <StatusBar
-        :round="round"
-        :accel-level="accelLevel"
-        :max-accel="MAX_ACCEL"
         :scam-type="scamType"
         :mark="mark"
-        :mark-name="markName"
-        :suspicion-line="suspicionLine"
-        :tier="tier"
+        :mark-email="markEmail"
+        :accel-level="accelLevel"
+        :max-accel="MAX_ACCEL"
+        @toggle-legend="showLegend = !showLegend"
       />
 
-      <!-- Dialogue: Player said → Mark reacts -->
-      <div v-if="playerLastLine" class="player-bubble">
-        <div class="player-bubble__content">
-          <p class="player-bubble__text">"{{ playerLastLine }}"</p>
-          <span class="player-bubble__label">You</span>
-        </div>
+      <!-- Chat conversation — takes up the bulk of the screen -->
+      <ChatLog
+        :messages="chatLog"
+        :mark-emoji="mark.emoji"
+        :mark-name="markName"
+      />
+
+      <!-- Suspicion warning -->
+      <div v-if="suspicionLine > 0" class="suspicion-warning">
+        Suspicion rising — {{ suspicionLine }}/50 cells consumed
       </div>
 
-      <MarkBubble
-        :mark="mark"
-        :mark-name="markName"
-        :reaction="markReaction"
-      />
-
+      <!-- Progress bar -->
       <ProgressBar
         :cells="barCells"
         :position="position"
         :suspicion-line="suspicionLine"
+        :range-preview="rangePreview"
+        :hovered-action="hoveredAction"
+        :is-hesitating="isHesitating"
+        :must-resolve-concern="mustResolveConcern"
       />
 
-      <CellLegend />
-
+      <!-- Action buttons -->
       <ActionButtons
         :can-capitalize="canCapitalize"
         :is-hesitating="isHesitating"
         :must-resolve-concern="mustResolveConcern"
         :accel-level="accelLevel"
         :max-accel="MAX_ACCEL"
-        :emotes="emotes"
+        :round="round"
+        :reward-tier-label="rewardTierLabel"
         @action="handleAction"
+        @hover="handleHover"
       />
 
-      <!-- Suspicion warning -->
-      <div v-if="suspicionLine > 0" class="suspicion-warning">
-        Suspicion is rising! {{ suspicionLine }} cells consumed from the left.
-      </div>
+      <CellLegend :visible="showLegend" @close="showLegend = false" />
     </div>
 
-    <!-- ═══ END SCREEN ═══ -->
+    <!-- END SCREEN -->
     <div v-else-if="gamePhase === 'ended'" class="end-phase">
       <EndScreen
         :won="won"
@@ -196,38 +186,41 @@ function handleAction(action) {
 
 <style scoped>
 .app-container {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   padding: 0 16px;
+  overflow: hidden;
 }
 
-/* ── Header ── */
+/* Header */
 .app-header {
   text-align: center;
-  padding: 24px 0 8px;
+  padding: 12px 0 6px;
+  flex-shrink: 0;
 }
 
 .app-header__title {
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 
 .app-header__sub {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
-/* ── Start Screen ── */
+/* Start Screen */
 .start-screen {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px 0;
+  overflow-y: auto;
 }
 
 .start-screen__card {
@@ -248,9 +241,7 @@ function handleAction(action) {
   margin-bottom: 8px;
 }
 
-.start-screen__scam-emoji {
-  font-size: 40px;
-}
+.start-screen__scam-emoji { font-size: 40px; }
 
 .start-screen__scam-tier {
   font-size: 11px;
@@ -306,6 +297,11 @@ function handleAction(action) {
   color: var(--text-primary);
 }
 
+.start-screen__mark-email {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 .start-screen__mark-demo {
   font-size: 13px;
   color: var(--text-secondary);
@@ -343,26 +339,30 @@ function handleAction(action) {
   box-shadow: 0 6px 20px rgba(110, 143, 112, 0.4);
 }
 
-/* ── Play Screen ── */
+/* Play Screen — full height chat-app layout */
 .play-screen {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 12px 0 24px;
+  gap: 8px;
+  padding: 6px 0 10px;
+  min-height: 0;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
 }
 
+/* Suspicion warning */
 .suspicion-warning {
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--accent-red-light);
   background: rgba(185, 28, 28, 0.1);
   border: 1px solid rgba(185, 28, 28, 0.2);
   border-radius: 6px;
-  padding: 8px 16px;
-  max-width: 680px;
-  margin: 0 auto;
+  padding: 5px 12px;
+  flex-shrink: 0;
   animation: pulse-red 2s ease-in-out infinite;
 }
 
@@ -371,59 +371,20 @@ function handleAction(action) {
   50% { opacity: 1; }
 }
 
-/* ── Player dialogue bubble ── */
-.player-bubble {
-  max-width: 680px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.player-bubble__content {
-  background: rgba(110, 143, 112, 0.15);
-  border: 1px solid rgba(110, 143, 112, 0.3);
-  border-radius: 12px;
-  border-bottom-right-radius: 4px;
-  padding: 8px 14px;
-  max-width: 80%;
-  animation: bubble-in 0.3s ease-out;
-}
-
-@keyframes bubble-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.player-bubble__text {
-  font-size: 13px;
-  color: var(--accent-green-light);
-  font-style: italic;
-  line-height: 1.4;
-}
-
-.player-bubble__label {
-  font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  display: block;
-  text-align: right;
-  margin-top: 2px;
-}
-
-/* ── End Phase ── */
+/* End Phase */
 .end-phase {
   flex: 1;
   padding: 20px 0;
+  overflow-y: auto;
 }
 
-/* ── Footer ── */
+/* Footer */
 .app-footer {
   text-align: center;
-  padding: 20px 0;
-  font-size: 12px;
+  padding: 8px 0;
+  font-size: 11px;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .app-footer a {

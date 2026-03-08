@@ -2,13 +2,14 @@
  * Social Engineer — Core game logic
  * Faithful adaptation of Torn RPG's "Scamming" crime progress bar.
  */
-import { ref, computed, reactive } from 'vue'
-import { SCAM_TYPES, MARK_DEMOGRAPHICS, MOVEMENT_RANGES, SUSPICION_THRESHOLDS } from '@/data/scenarios'
+import { ref, computed } from 'vue'
+import { SCAM_TYPES, MARK_DEMOGRAPHICS, MOVEMENT_RANGES, PLAYER_LINES, MARK_RESPONSES } from '@/data/scenarios'
 import { getDailySeed, getChallengeNumber, getTodayKey, seededRandom, seededRandInt } from './useDailySeed'
 
 const TOTAL_CELLS = 50
 const MAX_ACCEL = 5
 const STORAGE_PREFIX = 'socialengineer_'
+const MAX_SUSPICION_PIPS = 8
 
 function safeGetJSON(key, fallback) {
   try {
@@ -28,14 +29,11 @@ function generateBar(seed, scamType) {
 
   const counts = scamType.cells
 
-  // Helper: place N cells of a type within [lo, hi], avoiding already-placed non-neutral cells
   function placeGroup(type, count, lo, hi) {
-    // Collect available positions
     const available = []
     for (let i = lo; i <= hi && i < TOTAL_CELLS; i++) {
       if (cells[i] === 'neutral' && i !== 0) available.push(i)
     }
-    // Seeded shuffle to pick positions
     for (let i = available.length - 1; i > 0; i--) {
       s = (s * 9301 + 49297) % 233280
       const j = Math.floor((s / 233280) * (i + 1))
@@ -45,7 +43,6 @@ function generateBar(seed, scamType) {
     for (const pos of placed) cells[pos] = type
   }
 
-  // Place in order (later placements respect earlier ones)
   placeGroup('fail', counts.fail || 2, 42, 49)
   placeGroup('reward_high', counts.reward_high || 2, 35, 48)
   placeGroup('reward_medium', counts.reward_medium || 3, 20, 40)
@@ -55,7 +52,6 @@ function generateBar(seed, scamType) {
   placeGroup('temptation', counts.temptation || 2, 6, 30)
   placeGroup('sensitivity', counts.sensitivity || 2, 10, 45)
 
-  // Cell 0 always neutral (start)
   cells[0] = 'neutral'
 
   return cells
@@ -78,6 +74,15 @@ export function useSocialEngineer() {
   const { value: nameFloat } = seededRandom(dailySeed + 777)
   const markName = mark.names[Math.floor(nameFloat * mark.names.length)]
 
+  // Generate seeded fake email
+  const EMAIL_DOMAINS = ['mail.trn', 'inbox.trn', 'post.trn', 'web.trn']
+  const { value: emailDomainFloat } = seededRandom(dailySeed + 333)
+  const emailDomain = EMAIL_DOMAINS[Math.floor(emailDomainFloat * EMAIL_DOMAINS.length)]
+  const markEmail = computed(() => `${markName.toLowerCase()}@${emailDomain}`)
+
+  // Mark response data for this scam type
+  const markResponses = MARK_RESPONSES[scamType.id] || {}
+
   // Generate the bar
   const barCells = ref(generateBar(dailySeed, scamType))
 
@@ -88,13 +93,48 @@ export function useSocialEngineer() {
   const accelerationStacks = ref(0)
   const isHesitating = ref(false)
   const mustResolveConcern = ref(false)
-  const suspicionLine = ref(0) // how many cells from left are consumed
+  const suspicionLine = ref(0)
   const moveHistory = ref([])
   const won = ref(false)
   const endReason = ref('')
-  const markReaction = ref('')
   const lastMoveResult = ref(null)
   const capitalizeValue = ref('')
+
+  // v2 mechanics refs
+  const suspicionActionCount = ref(-1) // starts at -1 per wiki (first trigger does nothing)
+  const concernAttempts = ref(0)
+
+  // Chat log: array of { sender: 'player'|'mark'|'system', text: string }
+  const chatLog = ref([])
+
+  // Player dialogue lines for this scam type
+  const playerLines = PLAYER_LINES[scamType.id] || {}
+
+  function pickPlayerLine(actionKey, extraSeed = 0) {
+    const lines = playerLines[actionKey]
+    if (!lines || lines.length === 0) return ''
+    const { value: idx } = seededRandInt(
+      dailySeed + round.value * 131 + moveHistory.value.length * 17 + extraSeed,
+      0, lines.length - 1
+    )
+    return lines[idx]
+  }
+
+  // Pick a contextual mark response based on situation
+  function pickMarkResponse(situation, extraSeed = 0) {
+    const lines = markResponses[situation]
+    if (!lines || lines.length === 0) return ''
+    const { value: idx } = seededRandInt(
+      dailySeed + round.value * 257 + position.value * 43 + moveHistory.value.length * 19 + extraSeed,
+      0, lines.length - 1
+    )
+    return lines[idx]
+  }
+
+  function addChat(sender, text) {
+    if (!text) return
+    chatLog.value.push({ sender, text, round: round.value })
+  }
 
   // Computed
   const currentCell = computed(() => barCells.value[position.value])
@@ -108,6 +148,45 @@ export function useSocialEngineer() {
   )
 
   const isGameOver = computed(() => gamePhase.value === 'ended')
+
+  // ── Range preview for bar overlays ────────────────────
+  const rangePreview = computed(() => {
+    const pos = position.value
+    const accel = accelLevel.value
+    const r = ranges.value
+    if (!r) return {}
+
+    function clampRange(range) {
+      const [min, max] = range
+      const lo = Math.max(0, Math.min(TOTAL_CELLS - 1, pos + min))
+      const hi = Math.max(0, Math.min(TOTAL_CELLS - 1, pos + max))
+      return [lo, hi]
+    }
+
+    const result = {
+      back: clampRange(r.back[accel]),
+      soft: clampRange(r.soft[accel]),
+      strong: clampRange(r.strong[accel]),
+    }
+
+    // Accelerated preview: show what NEXT accel level would give for strong
+    if (accel < MAX_ACCEL) {
+      result.accelerate = clampRange(r.strong[accel + 1])
+    } else {
+      result.accelerate = clampRange(r.strong[accel])
+    }
+
+    return result
+  })
+
+  // ── Reward tier indicator ────────────────────────────
+  const rewardTierLabel = computed(() => {
+    const cell = barCells.value[position.value]
+    if (cell === 'reward_high') return '$$$'
+    if (cell === 'reward_medium') return '$$'
+    if (cell === 'reward_low') return '$'
+    return ''
+  })
 
   // ── Persistence ──────────────────────────────────────
   function saveState() {
@@ -124,6 +203,9 @@ export function useSocialEngineer() {
       endReason: endReason.value,
       barCells: barCells.value,
       capitalizeValue: capitalizeValue.value,
+      suspicionActionCount: suspicionActionCount.value,
+      concernAttempts: concernAttempts.value,
+      chatLog: chatLog.value,
     })
   }
 
@@ -143,6 +225,9 @@ export function useSocialEngineer() {
     endReason.value = saved.endReason || ''
     barCells.value = saved.barCells || barCells.value
     capitalizeValue.value = saved.capitalizeValue || ''
+    suspicionActionCount.value = saved.suspicionActionCount ?? -1
+    concernAttempts.value = saved.concernAttempts || 0
+    chatLog.value = saved.chatLog || []
     return true
   }
 
@@ -150,11 +235,6 @@ export function useSocialEngineer() {
   const restored = loadState()
 
   // ── Seeded random for moves ──────────────────────────
-  function getMoveRandom() {
-    const moveSeed = dailySeed + round.value * 7919 + position.value * 31 + moveHistory.value.length * 13
-    return seededRandInt(moveSeed, 0, 10000)
-  }
-
   function rollInRange(range) {
     const [min, max] = range
     const { value } = seededRandInt(
@@ -164,32 +244,25 @@ export function useSocialEngineer() {
     return value
   }
 
-  // ── Mark reactions ────────────────────────────────────
-  function updateReaction(cellType) {
-    if (cellType === 'concern') {
-      markReaction.value = mark.reactions.concerned
-    } else if (cellType === 'hesitation') {
-      markReaction.value = mark.reactions.hesitant
-    } else if (cellType?.startsWith('reward')) {
-      markReaction.value = mark.reactions.interested
-    } else if (cellType === 'temptation') {
-      markReaction.value = mark.reactions.convinced
-    } else if (cellType === 'sensitivity') {
-      markReaction.value = mark.reactions.suspicious
-    } else {
-      markReaction.value = mark.reactions.neutral
-    }
-  }
+  // ── Suspicion (incremental pip addition, wiki-accurate) ────────────
+  // Starts at -1. First trigger increments to 0 (no pips). Then 1, 2, 3... capped at 8.
+  // Extra pips: +1 for sensitivity landing, +1 for hesitation timeout, +2 for successful concern resolution.
+  function advanceSuspicion(extraPips = 0) {
+    suspicionActionCount.value++
 
-  // ── Suspicion ─────────────────────────────────────────
-  function advanceSuspicion() {
-    const thresholdIndex = Math.min(round.value, SUSPICION_THRESHOLDS.length - 1)
-    const target = SUSPICION_THRESHOLDS[thresholdIndex]
+    // suspicionActionCount starts at -1, so after first increment it's 0 = no pips added
+    const basePips = Math.max(0, suspicionActionCount.value)
+    const pipsToAdd = Math.min(basePips + extraPips, MAX_SUSPICION_PIPS)
+
+    if (pipsToAdd <= 0) return false
+
+    const newLine = Math.min(suspicionLine.value + pipsToAdd, TOTAL_CELLS)
+
     // Convert cells from left to suspicion
-    for (let i = suspicionLine.value; i < target && i < TOTAL_CELLS; i++) {
+    for (let i = suspicionLine.value; i < newLine && i < TOTAL_CELLS; i++) {
       barCells.value[i] = 'suspicion'
     }
-    suspicionLine.value = target
+    suspicionLine.value = newLine
 
     // Check if player position is consumed
     if (position.value < suspicionLine.value) {
@@ -199,28 +272,40 @@ export function useSocialEngineer() {
     return false
   }
 
+  // ── Remove a cell type at a position (replace with neutral) ────
+  function removeCellAt(pos) {
+    if (pos >= 0 && pos < TOTAL_CELLS) {
+      barCells.value[pos] = 'neutral'
+    }
+  }
+
   // ── Cell landing effects ──────────────────────────────
   function handleCellLanding(cellType) {
-    updateReaction(cellType)
-
     if (cellType === 'fail') {
+      addChat('system', 'The mark saw through your scam!')
+      addChat('mark', pickMarkResponse('suspicious'))
       endGame(false, 'busted')
       return
     }
     if (cellType === 'suspicion') {
+      addChat('system', 'Suspicion has consumed your position!')
       endGame(false, 'suspicion')
       return
     }
     if (cellType === 'concern') {
+      addChat('mark', pickMarkResponse('concerned'))
       mustResolveConcern.value = true
+      concernAttempts.value = 0
       return
     }
     if (cellType === 'hesitation') {
+      addChat('mark', pickMarkResponse('hesitant'))
       isHesitating.value = true
       return
     }
     if (cellType === 'temptation') {
-      // Auto-drift forward, skipping hazards — find next neutral or reward
+      addChat('mark', pickMarkResponse('tempted'))
+      addChat('system', 'The mark is hooked! Drifting forward...')
       let newPos = position.value + 1
       while (newPos < TOTAL_CELLS) {
         const ct = barCells.value[newPos]
@@ -232,12 +317,16 @@ export function useSocialEngineer() {
         return
       }
       position.value = newPos
-      // Don't re-handle the landing cell from temptation drift (it's safe)
-      updateReaction(barCells.value[newPos])
+      // Check what we landed on after drift
+      const driftCell = barCells.value[newPos]
+      if (driftCell.startsWith('reward')) {
+        addChat('mark', pickMarkResponse('interested', 1))
+      }
       return
     }
     if (cellType === 'sensitivity') {
-      // Auto-drift backward to nearest neutral
+      addChat('mark', pickMarkResponse('suspicious'))
+      addChat('system', 'You hit a nerve! Pushed back...')
       let newPos = position.value - 1
       while (newPos >= suspicionLine.value) {
         if (barCells.value[newPos] === 'neutral') break
@@ -248,8 +337,15 @@ export function useSocialEngineer() {
         return
       }
       position.value = newPos
-      updateReaction('neutral')
+      // Extra +1 suspicion for sensitivity
+      advanceSuspicion(1)
       return
+    }
+    // Normal landing (neutral or reward)
+    if (cellType?.startsWith('reward')) {
+      addChat('mark', pickMarkResponse('interested'))
+    } else {
+      addChat('mark', pickMarkResponse('neutral'))
     }
   }
 
@@ -260,7 +356,11 @@ export function useSocialEngineer() {
     position.value = 0
     round.value = 1
     accelerationStacks.value = 0
-    markReaction.value = scamType.openingLine
+    suspicionActionCount.value = -1
+    concernAttempts.value = 0
+    chatLog.value = []
+    addChat('player', scamType.openingLine)
+    addChat('mark', pickMarkResponse('neutral'))
     saveState()
   }
 
@@ -271,9 +371,14 @@ export function useSocialEngineer() {
     // Handle hesitation (skip turn)
     if (isHesitating.value) {
       isHesitating.value = false
+      // Remove the hesitation cell from the bar
+      removeCellAt(position.value)
+      addChat('system', 'The mark needs time to think...')
       round.value++
-      const suspicionEnded = advanceSuspicion()
+      // +1 extra suspicion for hesitation timeout
+      const suspicionEnded = advanceSuspicion(1)
       if (suspicionEnded) return lastMoveResult.value
+      addChat('mark', pickMarkResponse('neutral'))
       moveHistory.value.push({ action: 'skip', from: position.value, to: position.value, round: round.value - 1 })
       lastMoveResult.value = { action: 'skip', moved: 0 }
       saveState()
@@ -284,21 +389,26 @@ export function useSocialEngineer() {
     const accel = accelLevel.value
 
     if (action === 'strong') {
+      addChat('player', pickPlayerLine('strong'))
       delta = rollInRange(ranges.value.strong[accel])
       accelerationStacks.value = 0
     } else if (action === 'soft') {
+      addChat('player', pickPlayerLine('soft'))
       delta = rollInRange(ranges.value.soft[accel])
       accelerationStacks.value = 0
     } else if (action === 'back') {
+      addChat('player', pickPlayerLine('back'))
       delta = rollInRange(ranges.value.back[accel])
       accelerationStacks.value = 0
     } else if (action === 'accelerate') {
+      addChat('player', pickPlayerLine('accelerate'))
       if (accelerationStacks.value < MAX_ACCEL) {
         accelerationStacks.value++
       }
       round.value++
       const suspicionEnded = advanceSuspicion()
       if (suspicionEnded) return lastMoveResult.value
+      addChat('system', `Pressure building... (${accelerationStacks.value}/${MAX_ACCEL})`)
       moveHistory.value.push({ action: 'accelerate', from: position.value, to: position.value, round: round.value - 1 })
       lastMoveResult.value = { action: 'accelerate', stacks: accelerationStacks.value }
       saveState()
@@ -346,20 +456,34 @@ export function useSocialEngineer() {
   function resolveConcern() {
     if (!mustResolveConcern.value) return null
 
-    // Roll against mark's concern success rate
+    concernAttempts.value++
+    addChat('player', pickPlayerLine('resolve', concernAttempts.value))
+
+    // Different seed per attempt for fairness
     const { value: roll } = seededRandInt(
-      dailySeed + round.value * 3571 + position.value * 97,
+      dailySeed + round.value * 3571 + position.value * 97 + concernAttempts.value * 1237,
       0, 100
     )
     const success = roll < (mark.concernSuccessRate * 100)
 
     if (success) {
       mustResolveConcern.value = false
-      markReaction.value = mark.reactions.convinced
+      // Remove concern cell from bar
+      removeCellAt(position.value)
+      addChat('mark', pickMarkResponse('convinced'))
+      // +2 extra suspicion for successful concern resolution
+      round.value++
+      const suspicionEnded = advanceSuspicion(2)
+      if (suspicionEnded) return lastMoveResult.value
       lastMoveResult.value = { action: 'concern_resolved', success: true }
     } else {
-      endGame(false, 'concern_failed')
-      return lastMoveResult.value
+      // Don't end game — keep concern active, advance round + suspicion
+      addChat('mark', pickMarkResponse('suspicious', concernAttempts.value))
+      addChat('system', 'The mark isn\'t convinced yet. Suspicion advances...')
+      round.value++
+      const suspicionEnded = advanceSuspicion()
+      if (suspicionEnded) return lastMoveResult.value
+      lastMoveResult.value = { action: 'concern_failed_attempt', success: false, attempts: concernAttempts.value }
     }
 
     saveState()
@@ -369,12 +493,16 @@ export function useSocialEngineer() {
   function capitalize() {
     if (!canCapitalize.value) return null
 
+    addChat('player', pickPlayerLine('capitalize'))
+
     const cellType = barCells.value[position.value]
     let value = ''
     if (cellType === 'reward_high') value = 'HIGH'
     else if (cellType === 'reward_medium') value = 'MEDIUM'
     else value = 'LOW'
 
+    addChat('mark', pickMarkResponse('convinced'))
+    addChat('system', `Scam successful! ${value} reward collected.`)
     capitalizeValue.value = value
     endGame(true, 'capitalized')
     return { action: 'capitalize', value }
@@ -384,13 +512,6 @@ export function useSocialEngineer() {
     won.value = didWin
     endReason.value = reason
     gamePhase.value = 'ended'
-    if (didWin) {
-      markReaction.value = mark.reactions.convinced
-    } else if (reason === 'concern_failed') {
-      markReaction.value = mark.reactions.suspicious
-    } else {
-      markReaction.value = ''
-    }
     saveState()
   }
 
@@ -407,9 +528,11 @@ export function useSocialEngineer() {
     moveHistory.value = []
     won.value = false
     endReason.value = ''
-    markReaction.value = ''
     lastMoveResult.value = null
     capitalizeValue.value = ''
+    suspicionActionCount.value = -1
+    concernAttempts.value = 0
+    chatLog.value = []
   }
 
   // ── Share results ─────────────────────────────────────
@@ -426,7 +549,6 @@ export function useSocialEngineer() {
       return '\u{2B1C}'
     }).join('')
 
-    // Split bar into rows of 10 for readability
     const rows = []
     for (let i = 0; i < bar.length; i += 10) {
       rows.push(bar.slice(i, i + 10))
@@ -448,6 +570,7 @@ export function useSocialEngineer() {
     scamType,
     mark,
     markName,
+    markEmail,
     challengeNumber,
     TOTAL_CELLS,
     MAX_ACCEL,
@@ -465,9 +588,11 @@ export function useSocialEngineer() {
     moveHistory,
     won,
     endReason,
-    markReaction,
     lastMoveResult,
     capitalizeValue,
+    suspicionActionCount,
+    concernAttempts,
+    chatLog,
 
     // Computed
     currentCell,
@@ -475,6 +600,8 @@ export function useSocialEngineer() {
     canCapitalize,
     isGameOver,
     tier,
+    rangePreview,
+    rewardTierLabel,
 
     // Actions
     startGame,

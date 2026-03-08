@@ -29,7 +29,7 @@ const reasonText = {
   capitalized: `Capitalized at position ${props.position} for a ${props.capitalizeValue} reward!`,
   busted: 'You landed on a fail cell. The mark caught on and reported you.',
   suspicion: 'Suspicion caught up to you. Too slow!',
-  concern_failed: `${props.markName} saw through your lie and called the authorities.`,
+  concern_failed: 'Suspicion consumed your position while resolving concerns.',
   overshot: 'You went past the end of the bar. The mark got away.',
 }
 

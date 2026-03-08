@@ -6,6 +6,10 @@ const props = defineProps({
   cells: { type: Array, required: true },
   position: { type: Number, required: true },
   suspicionLine: { type: Number, default: 0 },
+  rangePreview: { type: Object, default: () => ({}) },
+  hoveredAction: { type: String, default: null },
+  isHesitating: { type: Boolean, default: false },
+  mustResolveConcern: { type: Boolean, default: false },
 })
 
 function cellStyle(type) {
@@ -13,90 +17,132 @@ function cellStyle(type) {
   return { backgroundColor: meta.color }
 }
 
-function isPlayerHere(index) {
-  return index === props.position
+// Determine which range overlay colors apply to a given cell index
+function rangeOverlayStyle(index) {
+  const rp = props.rangePreview
+  if (!rp || Object.keys(rp).length === 0) return null
+
+  const hovered = props.hoveredAction
+  const overlays = []
+
+  const rangeColors = {
+    back: 'var(--range-back)',
+    soft: 'var(--range-soft)',
+    strong: 'var(--range-strong)',
+    accelerate: 'var(--range-accel)',
+  }
+
+  for (const [action, [lo, hi]] of Object.entries(rp)) {
+    if (index >= lo && index <= hi) {
+      overlays.push(action)
+    }
+  }
+
+  if (overlays.length === 0) return null
+
+  // If hovering a specific action, only show that range fully; dim others
+  if (hovered && overlays.includes(hovered)) {
+    return { backgroundColor: rangeColors[hovered], opacity: 1 }
+  }
+  if (hovered && !overlays.includes(hovered)) {
+    // This cell is in some other range — show at reduced opacity
+    return { backgroundColor: rangeColors[overlays[0]], opacity: 0.3 }
+  }
+
+  // No hover: show first matching range at low opacity
+  return { backgroundColor: rangeColors[overlays[0]], opacity: 0.5 }
 }
+
+// Reward cell labels
+function rewardLabel(type) {
+  if (type === 'reward_high') return '$$$'
+  if (type === 'reward_medium') return '$$'
+  if (type === 'reward_low') return '$'
+  return ''
+}
+
+const playerLeft = computed(() => {
+  const total = props.cells.length
+  return `${(props.position / total) * 100}%`
+})
 </script>
 
 <template>
-  <div class="progress-bar-wrapper">
-    <div class="progress-bar">
+  <div class="bar-wrapper" :class="{ 'bar-wrapper--hesitating': isHesitating }">
+    <div class="bar-container">
       <div
         v-for="(cell, i) in cells"
         :key="i"
-        class="cell"
+        class="bar-cell"
         :class="{
-          'cell--player': isPlayerHere(i),
-          'cell--suspicion': cell === 'suspicion',
+          'bar-cell--suspicion': cell === 'suspicion',
+          'bar-cell--concern-active': cell === 'concern' && mustResolveConcern && i === position,
         }"
         :style="cellStyle(cell)"
         :title="`Cell ${i}: ${CELL_TYPES[cell]?.label || cell}`"
       >
-        <span v-if="isPlayerHere(i)" class="cell__marker">&#x25BC;</span>
-        <span v-if="isPlayerHere(i)" class="cell__player">&#x1F464;</span>
-      </div>
-    </div>
+        <!-- Range overlay -->
+        <div
+          v-if="rangeOverlayStyle(i)"
+          class="bar-cell__overlay"
+          :style="rangeOverlayStyle(i)"
+        ></div>
 
-    <!-- Position indicator -->
-    <div class="progress-bar__info">
-      <span class="font-mono text-xs" style="color: var(--text-muted)">0</span>
-      <span class="font-mono text-xs" style="color: var(--text-secondary)">
-        Position: {{ position }} / {{ cells.length - 1 }}
-      </span>
-      <span class="font-mono text-xs" style="color: var(--text-muted)">{{ cells.length - 1 }}</span>
+        <!-- Reward label on wider screens -->
+        <span v-if="rewardLabel(cell)" class="bar-cell__reward-label">{{ rewardLabel(cell) }}</span>
+      </div>
+
+      <!-- Player triangle marker (below bar) -->
+      <div class="bar-player-marker" :style="{ left: playerLeft }">
+        <span class="bar-player-marker__triangle">&#x25BC;</span>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.progress-bar-wrapper {
+.bar-wrapper {
   width: 100%;
-  max-width: 680px;
   margin: 0 auto;
+  transition: opacity 0.3s;
+  flex-shrink: 0;
 }
 
-.progress-bar {
+.bar-wrapper--hesitating {
+  opacity: 0.5;
+}
+
+.bar-container {
   display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  padding: 12px;
+  gap: 1px;
+  padding: 8px 10px 20px;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: 6px;
   border: 1px solid var(--border);
-}
-
-.cell {
-  flex: 0 0 calc((100% - 49 * 2px) / 50);
-  aspect-ratio: 1;
-  border-radius: 3px;
   position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bar-cell {
+  flex: 1;
+  height: 32px;
+  border-radius: 2px;
+  position: relative;
   min-width: 0;
+  transition: background-color 0.2s;
 }
 
-/* Tablet: 25 per row */
-@media (max-width: 768px) {
-  .cell {
-    flex: 0 0 calc((100% - 24 * 2px) / 25);
-  }
-}
-
-/* Small mobile: 10 per row */
 @media (max-width: 480px) {
-  .cell {
-    flex: 0 0 calc((100% - 9 * 2px) / 10);
+  .bar-cell {
+    height: 24px;
   }
 }
 
-.cell--player {
-  transform: scale(1.4);
-  z-index: 10;
-  box-shadow: 0 0 8px rgba(110, 143, 112, 0.6), 0 0 16px rgba(110, 143, 112, 0.3);
-  border-radius: 3px;
+.bar-cell--suspicion {
+  animation: suspicion-pulse 1.5s ease-in-out infinite;
 }
 
-.cell--suspicion {
-  animation: suspicion-pulse 1.5s ease-in-out infinite;
+.bar-cell--concern-active {
+  box-shadow: inset 0 0 6px rgba(139, 92, 246, 0.6);
 }
 
 @keyframes suspicion-pulse {
@@ -104,36 +150,46 @@ function isPlayerHere(index) {
   50% { opacity: 1; }
 }
 
-.cell__marker {
+.bar-cell__overlay {
   position: absolute;
-  top: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 8px;
-  color: var(--accent-green-light);
-  line-height: 1;
+  inset: 0;
+  border-radius: 2px;
+  pointer-events: none;
+  transition: opacity 0.15s;
 }
 
-.cell__player {
+.bar-cell__reward-label {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9px;
-  line-height: 1;
+  font-size: 7px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 @media (max-width: 480px) {
-  .cell__player { font-size: 12px; }
-  .cell__marker { font-size: 10px; top: -16px; }
+  .bar-cell__reward-label {
+    display: none;
+  }
 }
 
-.progress-bar__info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 6px;
-  padding: 0 12px;
+/* Player position marker — black triangle below bar */
+.bar-player-marker {
+  position: absolute;
+  bottom: 2px;
+  transform: translateX(-50%);
+  transition: left 0.3s ease;
+  z-index: 10;
+}
+
+.bar-player-marker__triangle {
+  font-size: 12px;
+  color: #000;
+  text-shadow: 0 0 4px rgba(110, 143, 112, 0.8), 0 0 8px rgba(110, 143, 112, 0.4);
+  line-height: 1;
 }
 </style>

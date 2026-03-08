@@ -29,6 +29,13 @@
   --cell-suspicion: #7f1d1d;
   --cell-temptation: #1e3a5f;
   --cell-sensitivity: #4a3728;
+
+  /* Range overlay colors */
+  --range-back: rgba(239, 68, 68, 0.25);
+  --range-soft: rgba(59, 130, 246, 0.25);
+  --range-strong: rgba(34, 197, 94, 0.25);
+  --range-accel: rgba(249, 115, 22, 0.25);
+  --capitalize-glow: rgba(234, 179, 8, 0.5);
 }
 
 * {
