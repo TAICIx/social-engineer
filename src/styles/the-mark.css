@@ -1,0 +1,14 @@
+/* ── The Mark — Defense game accent theme ───────────────── */
+/* Amber/orange warning palette — you're under threat, stay alert */
+
+:root {
+  --mark-accent: #ffaa00;
+  --mark-accent-dim: rgba(255, 170, 0, 0.15);
+  --mark-accent-glow: rgba(255, 170, 0, 0.3);
+  --mark-danger: #ff3344;
+  --mark-danger-dim: rgba(255, 51, 68, 0.12);
+  --mark-safe: #00ff88;
+  --mark-safe-dim: rgba(0, 255, 136, 0.12);
+  --mark-caller: #ff5722;
+  --mark-caller-dim: rgba(255, 87, 34, 0.08);
+}

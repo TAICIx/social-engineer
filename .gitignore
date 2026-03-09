@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Reference HTML files (saved web pages)
+Scamming*
+[Crimes*
+.claude/

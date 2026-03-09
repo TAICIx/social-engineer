@@ -1,0 +1,12 @@
+/* The Con - Teal Messenger theme */
+.con-game {
+  --accent: #00bcd4;
+  --accent-dim: rgba(0, 188, 212, 0.12);
+  --accent-glow: rgba(0, 188, 212, 0.25);
+  --success: #00e676;
+  --success-dim: rgba(0, 230, 118, 0.12);
+  --danger: #ff3344;
+  --danger-dim: rgba(255, 51, 68, 0.12);
+  --warning: #ffaa00;
+  --warning-dim: rgba(255, 170, 0, 0.12);
+}
