@@ -21,7 +21,16 @@ const games = [
     description: 'Face-to-face with a mark. Type what you want to say. Manipulate them using persuasion psychology. But they have a mind of their own.',
     accent: '#00bcd4',
     route: '/con',
-    status: 'COMING SOON',
+    status: 'ACTIVE',
+  },
+  {
+    id: 'mark',
+    title: 'THE MARK',
+    tagline: 'Someone is targeting you. Can you tell?',
+    description: 'You\'re the target now. A caller contacts you — legit or scam? Chat naturally, spot the red flags, and make your call before it\'s too late.',
+    accent: '#ffaa00',
+    route: '/mark',
+    status: 'ACTIVE',
   },
 ]
 </script>
@@ -74,7 +83,7 @@ const games = [
 }
 
 .landing__inner {
-  max-width: 800px;
+  max-width: 960px;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -137,7 +146,7 @@ const games = [
 
 .landing__games {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   width: 100%;
 }
@@ -156,7 +165,7 @@ const games = [
   text-decoration: underline;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
   .landing__games {
     grid-template-columns: 1fr;
   }

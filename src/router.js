@@ -16,6 +16,11 @@ const routes = [
     name: 'con',
     component: () => import('./components/thecon/ConGame.vue'),
   },
+  {
+    path: '/mark',
+    name: 'mark',
+    component: () => import('./components/themark/MarkGame.vue'),
+  },
 ]
 
 export const router = createRouter({
