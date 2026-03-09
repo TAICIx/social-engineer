@@ -1,16 +1,18 @@
 @import "tailwindcss";
 
-/* ── Torn-inspired dark theme ────────────────────────────── */
+/* ── Torn-faithful dark theme ────────────────────────────── */
 :root {
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #222;
-  --bg-card: #2a2a2a;
-  --bg-elevated: #333;
-  --text-primary: #e0ddd4;
+  --bg-primary: #111;
+  --bg-secondary: #191919;
+  --bg-card: #1e1e1e;
+  --bg-elevated: #2a2a2a;
+  --bg-torn-panel: #1a1a1a;
+  --bg-torn-row: #161616;
+  --text-primary: #ccc;
   --text-secondary: #999;
   --text-muted: #666;
-  --border: #3a3a3a;
-  --border-light: #444;
+  --border: #2a2a2a;
+  --border-light: #3a3a3a;
   --accent-green: #6e8f70;
   --accent-green-light: #9FB6A1;
   --accent-red: #b91c1c;
@@ -18,17 +20,17 @@
   --accent-yellow: #d97706;
   --accent-purple: #8b5cf6;
 
-  /* Cell colors */
-  --cell-neutral: #3a3a3a;
+  /* Torn-accurate cell colors */
+  --cell-neutral: #2a2a2a;
   --cell-reward-low: #2d4a2e;
   --cell-reward-medium: #3d6b3f;
   --cell-reward-high: #4a8c4d;
   --cell-concern: #5b21b6;
-  --cell-hesitation: #92400e;
+  --cell-hesitation: #7a6a00;
   --cell-fail: #991b1b;
   --cell-suspicion: #7f1d1d;
-  --cell-temptation: #1e3a5f;
-  --cell-sensitivity: #4a3728;
+  --cell-temptation: #1a6b6a;
+  --cell-sensitivity: #8b2252;
 
   /* Range overlay colors */
   --range-back: rgba(239, 68, 68, 0.25);
@@ -45,7 +47,7 @@
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100vh;
@@ -53,10 +55,56 @@ body {
 }
 
 .font-mono {
-  font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  font-family: 'Courier New', Consolas, monospace;
 }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+/* ── Cell pattern animations ───────────────────────────── */
+@keyframes chevron-right {
+  0% { background-position: 0 0; }
+  100% { background-position: 12px 0; }
+}
+
+@keyframes chevron-left {
+  0% { background-position: 0 0; }
+  100% { background-position: -12px 0; }
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes suspicion-creep {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes arrow-up {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 -10px; }
+}
+
+@keyframes arrow-down {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 10px; }
+}
+
+@keyframes cap-glow {
+  0%, 100% { box-shadow: 0 0 4px var(--capitalize-glow); }
+  50% { box-shadow: 0 0 12px var(--capitalize-glow), 0 0 20px rgba(234, 179, 8, 0.3); }
+}
+
+@keyframes accel-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}

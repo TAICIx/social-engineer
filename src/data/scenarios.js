@@ -840,6 +840,153 @@ export const MARK_RESPONSES = {
   },
 }
 
+// ── Per-scam response type names (Torn uses different labels per scam) ──
+// Keys map to action types: strong, soft, back, accelerate
+export const RESPONSE_TYPE_NAMES = {
+  delivery:         { strong: 'Professional', soft: 'Terse', back: 'Reassuring', accelerate: 'Threatening' },
+  family_emergency: { strong: 'Desperate', soft: 'Emotional', back: 'Stalling', accelerate: 'Panicked' },
+  prize_lottery:    { strong: 'Enthusiastic', soft: 'Credible', back: 'Procedural', accelerate: 'Urgent' },
+  charity:          { strong: 'Heartbreaking', soft: 'Compassionate', back: 'Informative', accelerate: 'Urgent' },
+  tech_support:     { strong: 'Alarming', soft: 'Reassuring', back: 'Technical', accelerate: 'Critical' },
+  vacation:         { strong: 'Enticing', soft: 'Exclusive', back: 'Detailed', accelerate: 'Scarce' },
+  tax_irs:          { strong: 'Threatening', soft: 'Procedural', back: 'Bureaucratic', accelerate: 'Escalating' },
+  advance_fee:      { strong: 'Lavish', soft: 'Trusting', back: 'Bureaucratic', accelerate: 'Desperate' },
+  job:              { strong: 'Motivating', soft: 'Flattering', back: 'Administrative', accelerate: 'Pressuring' },
+  romance:          { strong: 'Passionate', soft: 'Tender', back: 'Vulnerable', accelerate: 'Devoted' },
+  investment:       { strong: 'Impressive', soft: 'Technical', back: 'Analytical', accelerate: 'Exclusive' },
+}
+
+// ── Narrative templates (third-person story text like Torn's outcomeContent) ──
+// Each template uses {mark} for mark name, {email} for email, {scam} for scam name.
+// Templates are per scam type → situation → array of variants.
+export const NARRATIVE_TEMPLATES = {
+  delivery: {
+    email_read: [
+      'You compose a delivery notification email to {mark} at {email}, claiming their package couldn\'t be delivered and requires address confirmation. The email includes a convincing tracking number and carrier branding.',
+      'An urgent delivery failure notice is drafted for {mark}. The message warns that their package will be returned to sender within 24 hours unless they verify their address immediately.',
+    ],
+    strong: [
+      'You press {mark} with urgency about their undelivered package. "{playerLine}" {mark} shifts uncomfortably — the pressure is working.',
+      'Taking a firm, professional tone, you warn {mark} about the tight timeline. "{playerLine}" The mark seems to take the deadline seriously.',
+    ],
+    soft: [
+      'You soften your approach, showing empathy for {mark}\'s delivery troubles. "{playerLine}" They seem to appreciate the understanding tone.',
+      'With a reassuring voice, you promise {mark} a smooth resolution. "{playerLine}" The mark relaxes slightly.',
+    ],
+    back: [
+      'You buy time, pretending to check {mark}\'s shipment status. "{playerLine}" The pause gives the mark a moment to think.',
+      'Stalling for time, you put {mark} through a series of verification steps. "{playerLine}" They wait patiently.',
+    ],
+    accelerate: [
+      'You ratchet up the pressure on {mark}, adding a ticking clock. "{playerLine}" The urgency builds.',
+      'You paint a picture of consequences for {mark} if they don\'t act now. "{playerLine}" The tension mounts.',
+    ],
+    capitalize: [
+      'You make your move, asking {mark} for payment details to process the redelivery. "{playerLine}" This is the moment of truth.',
+    ],
+    concern: [
+      '{mark} raises a red flag. "{markLine}" Their suspicion is palpable — you need to address this carefully.',
+    ],
+    concern_resolve_success: [
+      'You deftly address {mark}\'s concern with a convincing explanation. "{playerLine}" They seem satisfied — for now.',
+    ],
+    concern_resolve_fail: [
+      'Your attempt to reassure {mark} falls flat. "{markLine}" They\'re still not convinced.',
+    ],
+    hesitation: [
+      '{mark} goes quiet. "{markLine}" They need a moment to process before continuing.',
+    ],
+    temptation: [
+      '{mark}\'s eyes light up. "{markLine}" The hook is set — they drift further into your narrative.',
+    ],
+    sensitivity: [
+      'You hit a nerve with {mark}. "{markLine}" They pull back sharply, growing more guarded.',
+    ],
+    fail: [
+      '{mark} sees right through the scam. "{markLine}" It\'s over — they\'re reaching for their phone to report you.',
+    ],
+    suspicion: [
+      'Suspicion has been building too long. {mark}\'s patience has run out entirely — they disconnect and file a report.',
+    ],
+    overshot: [
+      'You pushed too far too fast. {mark} caught on when the story stopped making sense and walked away.',
+    ],
+    capitalize_success: [
+      '{mark} hands over their payment details. "{markLine}" The scam is complete — you pocket the {reward} reward.',
+    ],
+    neutral: [
+      '{mark} listens attentively. "{markLine}" The conversation continues.',
+      'The exchange with {mark} proceeds normally. "{markLine}" You maintain control of the narrative.',
+    ],
+    reward_landing: [
+      '{mark} is engaged and receptive. "{markLine}" You sense an opening to capitalize.',
+    ],
+  },
+  // Generic fallback used for scam types without custom templates
+  _default: {
+    email_read: [
+      'You craft a convincing message to {mark} at {email}, setting up the {scam} scheme. The bait is set.',
+      'A carefully worded email lands in {mark}\'s inbox at {email}. Your {scam} pitch is polished and believable.',
+    ],
+    strong: [
+      'You apply heavy pressure on {mark}. "{playerLine}" The bold approach pushes the conversation forward.',
+      'Taking an aggressive stance, you press {mark} hard. "{playerLine}" They seem shaken by the intensity.',
+    ],
+    soft: [
+      'You take a gentler approach with {mark}. "{playerLine}" The softer tone builds rapport.',
+      'With measured words, you coax {mark} along. "{playerLine}" Trust builds slowly.',
+    ],
+    back: [
+      'You pull back, giving {mark} breathing room. "{playerLine}" Sometimes patience pays off.',
+      'You stall for time with {mark}. "{playerLine}" The pause resets the dynamic.',
+    ],
+    accelerate: [
+      'You amplify the urgency for {mark}. "{playerLine}" The pressure builds without making a move yet.',
+      'Building tension, you tighten the screws on {mark}. "{playerLine}" The clock is ticking louder.',
+    ],
+    capitalize: [
+      'You go for the close, asking {mark} for what you came for. "{playerLine}" Everything hinges on this moment.',
+    ],
+    concern: [
+      '{mark} raises a concern. "{markLine}" You\'ll need to address this before proceeding.',
+    ],
+    concern_resolve_success: [
+      'You skillfully defuse {mark}\'s worry. "{playerLine}" The concern fades — but suspicion advances.',
+    ],
+    concern_resolve_fail: [
+      '{mark} isn\'t buying your explanation. "{markLine}" The concern persists.',
+    ],
+    hesitation: [
+      '{mark} hesitates. "{markLine}" They need time before you can continue.',
+    ],
+    temptation: [
+      '{mark} takes the bait. "{markLine}" Greed pulls them forward on the bar.',
+    ],
+    sensitivity: [
+      'You struck a sensitive chord with {mark}. "{markLine}" They recoil, and you lose ground.',
+    ],
+    fail: [
+      '{mark} catches on to your scheme. "{markLine}" Game over.',
+    ],
+    suspicion: [
+      'Too much suspicion has built up. {mark} ends the conversation and reports you.',
+    ],
+    overshot: [
+      'You overplayed your hand. {mark} saw through everything when you pushed too far.',
+    ],
+    capitalize_success: [
+      '{mark} falls for it completely. "{markLine}" You collect a {reward} reward.',
+    ],
+    neutral: [
+      '{mark} continues the conversation. "{markLine}"',
+      'The exchange with {mark} moves along. "{markLine}"',
+    ],
+    reward_landing: [
+      '{mark} is receptive and engaged. "{markLine}" An opportunity to capitalize presents itself.',
+    ],
+  },
+}
+
 // ── Cell type metadata for display ──
 export const CELL_TYPES = {
   neutral:       { label: 'Safe',        color: 'var(--cell-neutral)',       textColor: '#999' },

@@ -22,7 +22,6 @@ const props = defineProps({
 const copied = ref(false)
 
 const resultTitle = props.won ? 'Scam Successful' : 'Busted!'
-
 const resultEmoji = props.won ? '\u{1F4B0}' : '\u{1F4A5}'
 
 const reasonText = {
@@ -33,13 +32,20 @@ const reasonText = {
   overshot: 'You went past the end of the bar. The mark got away.',
 }
 
+function cellPatternClass(type) {
+  if (type === 'temptation') return 'mini-cell--temptation'
+  if (type === 'sensitivity') return 'mini-cell--sensitivity'
+  if (type === 'hesitation') return 'mini-cell--hesitation'
+  if (type === 'concern') return 'mini-cell--concern'
+  return ''
+}
+
 async function copyShare() {
   try {
     await navigator.clipboard.writeText(props.shareText)
     copied.value = true
     setTimeout(() => { copied.value = false }, 2000)
   } catch {
-    // Fallback
     const ta = document.createElement('textarea')
     ta.value = props.shareText
     document.body.appendChild(ta)
@@ -55,11 +61,11 @@ async function copyShare() {
 <template>
   <div class="end-screen">
     <!-- Result header -->
-    <div class="end-screen__header" :class="won ? 'end-screen__header--win' : 'end-screen__header--loss'">
-      <span class="end-screen__emoji">{{ resultEmoji }}</span>
-      <h2 class="end-screen__title">{{ resultTitle }}</h2>
-      <p class="end-screen__reason">{{ reasonText[endReason] || endReason }}</p>
-      <div class="end-screen__stats">
+    <div class="end-header" :class="won ? 'end-header--win' : 'end-header--loss'">
+      <span class="end-header__emoji">{{ resultEmoji }}</span>
+      <h2 class="end-header__title">{{ resultTitle }}</h2>
+      <p class="end-header__reason">{{ reasonText[endReason] || endReason }}</p>
+      <div class="end-header__stats">
         <div class="end-stat">
           <span class="end-stat__value font-mono">{{ round }}</span>
           <span class="end-stat__label">Rounds</span>
@@ -76,25 +82,26 @@ async function copyShare() {
     </div>
 
     <!-- Mini bar journey -->
-    <div class="end-screen__journey">
-      <h3 class="end-screen__section-title">Your Journey</h3>
+    <div class="end-journey">
+      <h3 class="end-section-title">YOUR JOURNEY</h3>
       <div class="mini-bar">
         <div
           v-for="(cell, i) in barCells"
           :key="i"
           class="mini-cell"
-          :class="{
-            'mini-cell--player': i === position,
-          }"
+          :class="[
+            cellPatternClass(cell),
+            { 'mini-cell--player': i === position }
+          ]"
           :style="{ backgroundColor: CELL_TYPES[cell]?.color || 'var(--cell-neutral)' }"
         ></div>
       </div>
     </div>
 
     <!-- Educational Debrief -->
-    <div class="end-screen__debrief">
-      <h3 class="end-screen__section-title">
-        {{ scamType.emoji }} Learn About: {{ scamType.name }} Scams
+    <div class="end-debrief">
+      <h3 class="end-section-title">
+        {{ scamType.emoji }} LEARN ABOUT: {{ scamType.name.toUpperCase() }} SCAMS
       </h3>
       <div class="debrief-card">
         <div class="debrief-item">
@@ -113,12 +120,12 @@ async function copyShare() {
     </div>
 
     <!-- Share + Restart -->
-    <div class="end-screen__actions">
-      <button class="share-btn" @click="copyShare">
-        {{ copied ? 'Copied!' : 'Share Results' }}
+    <div class="end-actions">
+      <button class="end-btn end-btn--share" @click="copyShare">
+        {{ copied ? 'COPIED!' : 'SHARE RESULTS' }}
       </button>
-      <button class="restart-btn" @click="emit('restart')">
-        Play Again
+      <button class="end-btn end-btn--restart" @click="emit('restart')">
+        PLAY AGAIN
       </button>
     </div>
   </div>
@@ -130,88 +137,88 @@ async function copyShare() {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
-.end-screen__header {
+.end-header {
   text-align: center;
-  padding: 24px 20px;
-  border-radius: 12px;
+  padding: 20px 16px;
+  border-radius: 4px;
   border: 1px solid var(--border);
 }
 
-.end-screen__header--win {
+.end-header--win {
   background: linear-gradient(135deg, rgba(45, 74, 46, 0.3), rgba(74, 140, 77, 0.15));
   border-color: rgba(110, 143, 112, 0.4);
 }
 
-.end-screen__header--loss {
+.end-header--loss {
   background: linear-gradient(135deg, rgba(153, 27, 27, 0.2), rgba(127, 29, 29, 0.1));
   border-color: rgba(185, 28, 28, 0.3);
 }
 
-.end-screen__emoji {
-  font-size: 48px;
+.end-header__emoji {
+  font-size: 40px;
   display: block;
-  margin-bottom: 8px;
-}
-
-.end-screen__title {
-  font-size: 28px;
-  font-weight: 800;
   margin-bottom: 6px;
 }
 
-.end-screen__header--win .end-screen__title { color: var(--accent-green-light); }
-.end-screen__header--loss .end-screen__title { color: var(--accent-red-light); }
-
-.end-screen__reason {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-bottom: 16px;
+.end-header__title {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 4px;
 }
 
-.end-screen__stats {
+.end-header--win .end-header__title { color: var(--accent-green-light); }
+.end-header--loss .end-header__title { color: var(--accent-red-light); }
+
+.end-header__reason {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+.end-header__stats {
   display: flex;
   justify-content: center;
-  gap: 32px;
+  gap: 28px;
 }
 
 .end-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 1px;
 }
 
 .end-stat__value {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .end-stat__label {
-  font-size: 10px;
+  font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
   font-weight: 600;
 }
 
-.end-screen__journey {
-  padding: 16px;
-  background: var(--bg-card);
+/* Journey */
+.end-journey {
+  padding: 14px;
+  background: var(--bg-torn-panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
-.end-screen__section-title {
-  font-size: 13px;
+.end-section-title {
+  font-size: 11px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-secondary);
-  margin-bottom: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
   text-align: center;
 }
 
@@ -224,83 +231,110 @@ async function copyShare() {
   flex: 1;
   height: 12px;
   border-radius: 1px;
+  position: relative;
   transition: transform 0.2s;
 }
 
 .mini-cell--player {
   transform: scaleY(2);
-  border-radius: 2px;
   box-shadow: 0 0 6px rgba(110, 143, 112, 0.5);
 }
 
-.end-screen__debrief {
-  padding: 20px;
-  background: var(--bg-card);
+/* Mini bar patterns */
+.mini-cell--temptation::after,
+.mini-cell--sensitivity::after,
+.mini-cell--hesitation::after,
+.mini-cell--concern::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mini-cell--temptation::after {
+  background: repeating-linear-gradient(-60deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 3px);
+}
+
+.mini-cell--sensitivity::after {
+  background: repeating-linear-gradient(60deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 3px);
+}
+
+.mini-cell--hesitation::after {
+  background: radial-gradient(circle 1px, rgba(255,255,255,0.15) 100%, transparent 100%);
+  background-size: 4px 4px;
+}
+
+.mini-cell--concern::after {
+  background:
+    repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.08) 3px),
+    repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.08) 3px);
+}
+
+/* Debrief */
+.end-debrief {
+  padding: 16px;
+  background: var(--bg-torn-panel);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
 .debrief-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .debrief-item h4 {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--accent-green-light);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .debrief-item p {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.6;
   color: var(--text-secondary);
 }
 
-.end-screen__actions {
+/* Actions */
+.end-actions {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.share-btn {
-  padding: 12px 32px;
-  background: var(--accent-green);
-  color: #fff;
+.end-btn {
+  padding: 9px 28px;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 3px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
   font-family: inherit;
+  letter-spacing: 0.04em;
+  transition: background 0.15s;
 }
 
-.share-btn:hover {
+.end-btn--share {
+  background: var(--accent-green);
+  color: #fff;
+}
+
+.end-btn--share:hover {
   background: var(--accent-green-light);
-  transform: translateY(-1px);
 }
 
-.restart-btn {
-  padding: 12px 32px;
+.end-btn--restart {
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
 }
 
-.restart-btn:hover {
+.end-btn--restart:hover {
   border-color: var(--border-light);
   color: var(--text-primary);
-  transform: translateY(-1px);
 }
 </style>

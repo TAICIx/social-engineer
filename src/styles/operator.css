@@ -1,0 +1,98 @@
+/* ── The Operator — Cyan/Terminal theme ─────────────────── */
+.operator-game {
+  --accent: #00d4ff;
+  --accent-dim: rgba(0, 212, 255, 0.15);
+  --accent-glow: rgba(0, 212, 255, 0.3);
+  --success: #00ff88;
+  --success-dim: rgba(0, 255, 136, 0.15);
+  --danger: #ff3344;
+  --danger-dim: rgba(255, 51, 68, 0.12);
+  --warning: #ffaa00;
+  --warning-dim: rgba(255, 170, 0, 0.12);
+
+  /* Cell colors — Operator palette */
+  --cell-neutral: #151522;
+  --cell-reward-low: #0a3320;
+  --cell-reward-medium: #0d4a2a;
+  --cell-reward-high: #106635;
+  --cell-concern: #2d1560;
+  --cell-hesitation: #4a3d00;
+  --cell-fail: #4a0a0e;
+  --cell-suspicion: #3a0a0e;
+  --cell-temptation: #003838;
+  --cell-sensitivity: #4a0a30;
+
+  /* Range overlays */
+  --range-back: rgba(255, 51, 68, 0.25);
+  --range-soft: rgba(0, 212, 255, 0.2);
+  --range-strong: rgba(0, 255, 136, 0.25);
+  --range-accel: rgba(255, 170, 0, 0.2);
+  --capitalize-glow: rgba(0, 255, 136, 0.5);
+}
+
+/* Classified stamp effect */
+.classified-stamp {
+  position: relative;
+}
+
+.classified-stamp::after {
+  content: 'CLASSIFIED';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  color: rgba(255, 51, 68, 0.06);
+  pointer-events: none;
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Scan-line overlay */
+.scan-lines::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Cell pattern animations ───────────────────────────── */
+@keyframes chevron-right {
+  0% { background-position: 0 0; }
+  100% { background-position: 12px 0; }
+}
+
+@keyframes chevron-left {
+  0% { background-position: 0 0; }
+  100% { background-position: -12px 0; }
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.9; }
+}
+
+@keyframes suspicion-creep {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes cap-glow-op {
+  0%, 100% { box-shadow: 0 0 4px var(--capitalize-glow); }
+  50% { box-shadow: 0 0 16px var(--capitalize-glow), 0 0 28px rgba(0, 255, 136, 0.2); }
+}
+
+@keyframes threat-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
